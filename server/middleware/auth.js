@@ -1,22 +1,50 @@
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken, verifyRefreshToken, generateTokens, setTokenCookies } = require('../utils/auth');
+const { AppError } = require('../utils/errorHandler');
 
 function authMiddleware(allowedRoles = []) {
-  return (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ msg: 'No token' });
-
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ msg: 'No token' });
-
+  return async (req, res, next) => {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded; // id, role, email
-      if (allowedRoles.length && !allowedRoles.includes(decoded.role)) {
-        return res.status(403).json({ msg: 'Access denied' });
+      // Get access token from cookie
+      const accessToken = req.cookies.accessToken;
+      if (!accessToken) {
+        throw new AppError('Access denied. Please log in.', 401);
       }
+
+      // Verify access token
+      const decoded = verifyAccessToken(accessToken);
+      if (!decoded) {
+        // Try to refresh using refresh token
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+          throw new AppError('Access denied. Please log in.', 401);
+        }
+
+        const refreshDecoded = verifyRefreshToken(refreshToken);
+        if (!refreshDecoded) {
+          throw new AppError('Session expired. Please log in again.', 401);
+        }
+
+        // Generate new tokens
+        const user = await User.findById(refreshDecoded.id);
+        if (!user) {
+          throw new AppError('User no longer exists.', 401);
+        }
+
+        const tokens = generateTokens(user);
+        setTokenCookies(res, tokens);
+        req.user = { id: user._id, email: user.email, role: user.role };
+      } else {
+        req.user = decoded;
+      }
+
+      // Check role authorization
+      if (allowedRoles.length && !allowedRoles.includes(req.user.role)) {
+        throw new AppError('Access denied. Insufficient permissions.', 403);
+      }
+
       next();
-    } catch (err) {
-      return res.status(401).json({ msg: 'Token invalid' });
+    } catch (error) {
+      next(error);
     }
   };
 }

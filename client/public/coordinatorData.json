@@ -1,0 +1,44 @@
+{
+  "coordinator": {
+    "name": "John Doe",
+    "email": "johndoe@example.com",
+    "role": "Coordinator"
+  },
+  "teams": [
+    {
+      "id": 1,
+      "name": "Code Warriors",
+      "members": ["Alice Johnson", "Bob Smith", "Carol Davis", "David Wilson"],
+      "project": "E-commerce Platform",
+      "status": "In Progress",
+      "progress": 65,
+      "deadline": "2025-02-15"
+    },
+    {
+      "id": 2,
+      "name": "Tech Innovators",
+      "members": ["Emma Brown", "Frank Miller", "Grace Lee"],
+      "project": "AI Chatbot",
+      "status": "Submitted",
+      "progress": 100,
+      "deadline": "2025-02-12"
+    },
+    {
+      "id": 3,
+      "name": "Future Coders",
+      "members": ["Hannah White", "Ian Black", "Jack Green"],
+      "project": "Blockchain Voting System",
+      "status": "Active",
+      "progress": 40,
+      "deadline": "2025-02-20"
+    }
+  ],
+  "availableProjects": [
+    "E-commerce Platform",
+    "AI Chatbot",
+    "Mobile Fitness App",
+    "Blockchain Voting System",
+    "IoT Smart Home",
+    "Data Visualization Dashboard"
+  ]
+}

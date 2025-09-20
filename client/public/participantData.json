@@ -1,0 +1,22 @@
+{
+  "teamData": {
+    "name": "Code Warriors",
+    "members": ["Alice Johnson (You)", "Bob Smith", "Carol Davis", "David Wilson"],
+    "coordinator": "John Doe",
+    "deadline": "2025-02-15",
+    "progress": 65
+  },
+  "availableProjects": [
+    {
+      "id": 1,
+      "title": "E-commerce Platform",
+      "description": "Build a full-stack e-commerce platform...",
+      "difficulty": "Medium",
+      "category": "Web Development",
+      "rating": 4.2,
+      "participants": 24,
+      "requirements": ["User registration", "Shopping cart"],
+      "techStack": ["React", "Node.js", "MongoDB"]
+    }
+  ]
+}

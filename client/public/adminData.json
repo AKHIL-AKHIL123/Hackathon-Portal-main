@@ -1,0 +1,18 @@
+{
+  "stats": {
+    "totalEvents": 3,
+    "activeEvents": 2,
+    "completedEvents": 1,
+    "totalTeams": 48,
+    "totalParticipants": 192,
+    "activeProjects": 6
+  },
+  "projects": [
+    { "id": 1, "title": "E-commerce Platform", "difficulty": "Medium", "category": "Web Development", "participants": 24, "rating": 4.2 },
+    { "id": 2, "title": "AI Chatbot", "difficulty": "Hard", "category": "Machine Learning", "participants": 18, "rating": 4.7 },
+    { "id": 3, "title": "Mobile Fitness App", "difficulty": "Medium", "category": "Mobile Development", "participants": 32, "rating": 4.0 },
+    { "id": 4, "title": "Blockchain Voting System", "difficulty": "Hard", "category": "Blockchain", "participants": 12, "rating": 4.5 },
+    { "id": 5, "title": "IoT Smart Home", "difficulty": "Medium", "category": "IoT", "participants": 28, "rating": 4.3 },
+    { "id": 6, "title": "Data Visualization Dashboard", "difficulty": "Easy", "category": "Data Science", "participants": 36, "rating": 3.9 }
+  ]
+}

@@ -110,5 +110,35 @@ export const teamApi = {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch team submissions')
     }
+  },
+
+  // Get coordinator's teams
+  getCoordinatorTeams: async () => {
+    try {
+      const response = await axiosInstance.get('/team/coordinator/teams')
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch coordinator teams')
+    }
+  },
+
+  // Get all teams
+  getAllTeams: async () => {
+    try {
+      const response = await axiosInstance.get('/team/all')
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch all teams')
+    }
+  },
+
+  // Assign project to team
+  assignProject: async (teamId, projectId) => {
+    try {
+      const response = await axiosInstance.post(`/team/${teamId}/assign-project`, { projectId })
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to assign project')
+    }
   }
 }

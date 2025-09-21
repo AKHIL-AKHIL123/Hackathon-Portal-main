@@ -4,34 +4,53 @@ import DefaultLayout from "@/components/DefaultLayout"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Users, Plus } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { hackathonApi } from "@/api"
+import { useToast } from "@/hooks/use-toast"
 
 const AdminDashboard = () => {
-  const [hackathonData, setHackathonData] = useState({
-    title: "",
-    numTeams: "",
-    membersPerTeam: "",
-    registrationStart: "",
-    registrationEnd: "",
-  })
-  const [isEventCreated, setIsEventCreated] = useState(false)
-  const [registrationLink, setRegistrationLink] = useState("")
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
   const [projects, setProjects] = useState([])
   const [stats, setStats] = useState(null)
 
-  // 🔄 Fetch from /public/adminData.json
   useEffect(() => {
-    const fetchData = () => {
-      fetch("/adminData.json")
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.projects) setProjects(json.projects)
-          if (json.stats) setStats(json.stats)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const hackathons = await hackathonApi.getHackathons()
+        
+        // Calculate stats from hackathon data
+        const activeHackathons = hackathons.filter(h => new Date(h.endDate) > new Date())
+        const completedHackathons = hackathons.filter(h => new Date(h.endDate) <= new Date())
+        
+        // Get all projects from hackathons
+        const allProjects = hackathons.flatMap(h => h.projects || [])
+        
+        setProjects(allProjects)
+        setStats({
+          totalEvents: hackathons.length,
+          activeEvents: activeHackathons.length,
+          completedEvents: completedHackathons.length,
+          totalTeams: hackathons.reduce((acc, h) => acc + (h.teams?.length || 0), 0),
+          totalParticipants: hackathons.reduce((acc, h) => acc + (h.participants?.length || 0), 0),
+          activeProjects: allProjects.length
         })
-        .catch((err) => console.error("Error loading adminData.json:", err))
+      } catch (error) {
+        console.error("Error fetching hackathon data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please try again later.",
+          variant: "destructive"
+        })
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchData()
-    const interval = setInterval(fetchData, 10000) // auto-refresh every 10s
+    // Refresh data every minute
+    const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [])
 
@@ -67,57 +86,77 @@ const AdminDashboard = () => {
           </motion.div>
 
           {/* Stats Overview */}
-          {stats ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            >
-              <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Events</p>
-                      <p className="text-3xl font-bold text-blue-600">{stats.totalEvents}</p>
-                    </div>
-                    <Trophy className="w-8 h-8 text-blue-500" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Events</p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-blue-600">{stats?.totalEvents || 0}</p>
+                    )}
                   </div>
+                  <Trophy className="w-8 h-8 text-blue-500" />
+                </div>
+                {loading ? (
+                  <Skeleton className="h-5 w-32 mt-2" />
+                ) : (
                   <p className="text-sm text-blue-600 mt-2">
-                    {stats.activeEvents} active, {stats.completedEvents} completed
+                    {stats?.activeEvents || 0} active, {stats?.completedEvents || 0} completed
                   </p>
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+            </Card>
 
-              <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Teams</p>
-                      <p className="text-3xl font-bold text-emerald-600">{stats.totalTeams}</p>
-                    </div>
-                    <Users className="w-8 h-8 text-emerald-500" />
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Teams</p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-emerald-600">{stats?.totalTeams || 0}</p>
+                    )}
                   </div>
-                  <p className="text-sm text-emerald-600 mt-2">{stats.totalParticipants} participants</p>
-                </CardContent>
-              </Card>
+                  <Users className="w-8 h-8 text-emerald-500" />
+                </div>
+                {loading ? (
+                  <Skeleton className="h-5 w-32 mt-2" />
+                ) : (
+                  <p className="text-sm text-emerald-600 mt-2">{stats?.totalParticipants || 0} participants</p>
+                )}
+              </CardContent>
+            </Card>
 
-              <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Active Projects</p>
-                      <p className="text-3xl font-bold text-purple-600">{stats.activeProjects}</p>
-                    </div>
-                    <Plus className="w-8 h-8 text-purple-500" />
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Projects</p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-purple-600">{stats?.activeProjects || 0}</p>
+                    )}
                   </div>
+                  <Plus className="w-8 h-8 text-purple-500" />
+                </div>
+                {loading ? (
+                  <Skeleton className="h-5 w-32 mt-2" />
+                ) : (
                   <p className="text-sm text-purple-600 mt-2">Available challenges</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ) : (
-            <p className="text-center text-gray-500">Loading stats...</p>
-          )}
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Available Projects */}
           <motion.div
@@ -133,8 +172,16 @@ const AdminDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {projects.length === 0 ? (
-                  <p className="text-gray-500">No projects found in adminData.json</p>
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-[200px]">
+                        <Skeleton className="w-full h-full rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : projects.length === 0 ? (
+                  <p className="text-gray-500">No projects available</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project, index) => (

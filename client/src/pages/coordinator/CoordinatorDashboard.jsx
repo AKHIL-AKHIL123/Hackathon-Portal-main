@@ -9,6 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { teamApi } from "@/api";
 import {
   Table,
   TableBody,
@@ -35,36 +38,69 @@ import {
 } from "lucide-react";
 
 const CoordinatorDashboard = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
+  const [myTeams, setMyTeams] = useState([]);
 
-  // ✅ Fetch coordinator data from /public/coordinatorData.json
+  // Fetch coordinator data from API
   useEffect(() => {
-    const fetchData = () => {
-      fetch("/coordinatorData.json")
-        .then((res) => res.json())
-        .then((data) => {
-          setTeams(data.teams || []);
-          setAvailableProjects(data.availableProjects || []);
-        })
-        .catch((err) =>
-          console.error("Error loading /coordinatorData.json:", err)
-        );
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [coordinatorTeams, allTeams] = await Promise.all([
+          teamApi.getCoordinatorTeams(),
+          teamApi.getAllTeams()
+        ]);
+        
+        setMyTeams(coordinatorTeams);
+        setTeams(allTeams);
+        // Extract unique projects from all teams
+        const projects = [...new Set(allTeams
+          .map(team => team.project)
+          .filter(project => project)
+        )];
+        setAvailableProjects(projects);
+      } catch (error) {
+        console.error("Error fetching coordinator data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000); // auto-refresh every 10s
+    const interval = setInterval(fetchData, 60000); // auto-refresh every minute
     return () => clearInterval(interval);
-  }, []);
+  }, [toast]);
 
-  const handleProjectAssignment = (teamId, projectName) => {
-    setTeams((prev) =>
-      prev.map((team) =>
-        team.id === teamId
-          ? { ...team, project: projectName, status: "Active" }
-          : team
-      )
-    );
+  const handleProjectAssignment = async (teamId, projectId) => {
+    try {
+      await teamApi.assignProject(teamId, projectId);
+      // Refresh the teams data after successful assignment
+      const [updatedCoordinatorTeams, updatedAllTeams] = await Promise.all([
+        teamApi.getCoordinatorTeams(),
+        teamApi.getAllTeams()
+      ]);
+      setMyTeams(updatedCoordinatorTeams);
+      setTeams(updatedAllTeams);
+      toast({
+        title: "Success",
+        description: "Project assigned successfully",
+      });
+    } catch (error) {
+      console.error("Error assigning project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign project. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -87,7 +123,6 @@ const CoordinatorDashboard = () => {
     );
   };
 
-  const myTeams = teams.filter((team) => team.isMyTeam);
   const allTeams = teams;
 
   const TeamTable = ({ teamList, showAssignButton = false }) => (
@@ -103,7 +138,18 @@ const CoordinatorDashboard = () => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {teamList.map((team) => (
+        {loading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-40" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+              <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+              {showAssignButton && <TableCell><Skeleton className="h-8 w-24" /></TableCell>}
+            </TableRow>
+          ))
+        ) : teamList.map((team) => (
           <TableRow key={team.id}>
             <TableCell className="font-medium">{team.name}</TableCell>
             <TableCell>
@@ -206,9 +252,13 @@ const CoordinatorDashboard = () => {
                     <p className="text-sm font-medium text-gray-600">
                       My Teams
                     </p>
-                    <p className="text-3xl font-bold text-blue-600">
-                      {myTeams.length}
-                    </p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-blue-600">
+                        {myTeams.length}
+                      </p>
+                    )}
                   </div>
                   <Users className="w-8 h-8 text-blue-500" />
                 </div>
@@ -222,9 +272,13 @@ const CoordinatorDashboard = () => {
                     <p className="text-sm font-medium text-gray-600">
                       Projects Assigned
                     </p>
-                    <p className="text-3xl font-bold text-emerald-600">
-                      {myTeams.filter((team) => team.project).length}
-                    </p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-emerald-600">
+                        {myTeams.filter((team) => team.project).length}
+                      </p>
+                    )}
                   </div>
                   <ClipboardList className="w-8 h-8 text-emerald-500" />
                 </div>
@@ -238,9 +292,13 @@ const CoordinatorDashboard = () => {
                     <p className="text-sm font-medium text-gray-600">
                       Pending Assignments
                     </p>
-                    <p className="text-3xl font-bold text-amber-600">
-                      {myTeams.filter((team) => !team.project).length}
-                    </p>
+                    {loading ? (
+                      <Skeleton className="h-10 w-20 mt-1" />
+                    ) : (
+                      <p className="text-3xl font-bold text-amber-600">
+                        {myTeams.filter((team) => !team.project).length}
+                      </p>
+                    )}
                   </div>
                   <Clock className="w-8 h-8 text-amber-500" />
                 </div>
@@ -319,7 +377,13 @@ const CoordinatorDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {availableProjects.map((project, index) => (
+                  {loading ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="h-[140px]">
+                        <Skeleton className="w-full h-full rounded-xl" />
+                      </div>
+                    ))
+                  ) : availableProjects.map((project, index) => (
                     <motion.div
                       key={project}
                       initial={{ opacity: 0, y: 20 }}

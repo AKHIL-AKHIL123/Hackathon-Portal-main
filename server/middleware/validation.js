@@ -74,6 +74,40 @@ const hackathonValidations = {
     ]
 };
 
+const projectValidations = {
+    create: [
+        check('title')
+            .trim()
+            .notEmpty().withMessage('Title is required')
+            .isLength({ min: 3 }).withMessage('Title must be at least 3 characters long'),
+        
+        check('description')
+            .trim()
+            .notEmpty().withMessage('Description is required')
+            .isLength({ min: 20 }).withMessage('Description must be at least 20 characters long'),
+        
+        check('difficulty')
+            .isIn(['Easy', 'Medium', 'Hard']).withMessage('Invalid difficulty level'),
+            
+        check('category')
+            .trim()
+            .notEmpty().withMessage('Category is required'),
+    ]
+};
+
+const teamValidations = {
+    update: [
+        check('project')
+            .optional()
+            .isMongoId().withMessage('Invalid Project ID'),
+            
+        check('coordinator')
+            .optional()
+            .isMongoId().withMessage('Invalid Coordinator ID'),
+    ]
+};
+
+
 // Validation middleware
 const validate = (validations) => {
     return async (req, res, next) => {
@@ -97,5 +131,7 @@ const validate = (validations) => {
 module.exports = {
     validate,
     authValidations,
-    hackathonValidations
+    hackathonValidations,
+    projectValidations,
+    teamValidations
 };

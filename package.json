@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "A comprehensive hackathon management platform",
   "scripts": {
-  "dev": "npm-run-all --parallel server client",
-  "server": "cd server && npm run dev",
-  "client": "cd client && npm run dev"
-},
-  
+    "dev": "npm-run-all --parallel server client",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
   "keywords": [
     "hackathon",
     "management",

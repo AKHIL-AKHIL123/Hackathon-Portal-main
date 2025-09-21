@@ -63,30 +63,13 @@ app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/teams', teamRoutes);
 
-// Error Handler Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-        error: {
-            message: err.message || 'Internal Server Error',
-            status: err.status || 500
-        }
-    });
-});
+// Import error handling middleware
+const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 
-// 404 Handler
+// 404 Handler - This should come after your routes
+app.use(notFound);
 
-app.use((req, res) => {
-    res.status(404).json({
-        error: {
-            message: 'Route not found',
-            status: 404
-        }
-    });
-});
-
-// Centralized Error Handler Middleware
-const { errorHandler } = require('./middleware/errorMiddleware');
+// Centralized Error Handler Middleware - This should be the last middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

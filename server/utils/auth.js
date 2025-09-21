@@ -64,18 +64,40 @@ const clearTokenCookies = (res) => {
 };
 
 const verifyAccessToken = (token) => {
+    if (!token) {
+        throw new Error('No token provided');
+    }
+    
     try {
-        return jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return decoded;
     } catch (error) {
-        return null;
+        if (error.name === 'TokenExpiredError') {
+            throw new Error('Token has expired');
+        } else if (error.name === 'JsonWebTokenError') {
+            throw new Error('Invalid token');
+        } else {
+            throw new Error('Failed to authenticate token');
+        }
     }
 };
 
 const verifyRefreshToken = (token) => {
+    if (!token) {
+        throw new Error('No refresh token provided');
+    }
+    
     try {
-        return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        return decoded;
     } catch (error) {
-        return null;
+        if (error.name === 'TokenExpiredError') {
+            throw new Error('Refresh token has expired');
+        } else if (error.name === 'JsonWebTokenError') {
+            throw new Error('Invalid refresh token');
+        } else {
+            throw new Error('Failed to verify refresh token');
+        }
     }
 };
 

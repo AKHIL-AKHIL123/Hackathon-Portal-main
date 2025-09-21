@@ -75,6 +75,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 Handler
+
 app.use((req, res) => {
     res.status(404).json({
         error: {
@@ -83,6 +84,10 @@ app.use((req, res) => {
         }
     });
 });
+
+// Centralized Error Handler Middleware
+const { errorHandler } = require('./middleware/errorMiddleware');
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 let server;
